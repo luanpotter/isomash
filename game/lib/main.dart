@@ -4,9 +4,10 @@ import 'package:flame/gestures.dart';
 import 'package:flame/sprite.dart';
 import 'package:flame/extensions.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show runApp;
 
 import 'components/character.dart';
+import 'components/path.dart';
 import 'components/selector.dart';
 
 void main() {
@@ -14,12 +15,12 @@ void main() {
   runApp(GameWidget(game: game));
 }
 
-class MyGame extends BaseGame with MouseMovementDetector, ScrollDetector {
+class MyGame extends BaseGame
+    with MouseMovementDetector, ScrollDetector, TapDetector {
   late final IsometricTileMapComponent map;
   late final Selector selector;
   late final Character player;
-
-  final Block playerPosition = Block(0, 0);
+  late final Path path;
 
   @override
   Future<void> onLoad() async {
@@ -50,13 +51,19 @@ class MyGame extends BaseGame with MouseMovementDetector, ScrollDetector {
     ];
     add(map = IsometricTileMapComponent(tileset, matrix));
 
-    add(player = Character(await loadSprite('simple-character.png')));
-    player.block = Block(5, 7);
+    add(
+      player = Character(
+        Block(5, 7),
+        await loadSprite('simple-character.png'),
+      ),
+    );
 
     add(selector = Selector(tileset.getSprite(3, 3)));
     selector.block = player.block;
 
-    final center = map.getBlockPosition(playerPosition);
+    add(path = Path());
+
+    final center = map.getBlockPosition(player.block);
     camera.setRelativeOffset(Anchor.center.toVector2());
     camera.moveTo(center);
     camera.snap();
@@ -74,5 +81,15 @@ class MyGame extends BaseGame with MouseMovementDetector, ScrollDetector {
   @override
   void onScroll(PointerScrollEvent event) {
     print(event.scrollDelta);
+  }
+
+  @override
+  void onTapUp(TapUpDetails details) {
+    final pos = camera.screenToWorld(details.localPosition.toVector2());
+    final block = map.getBlock(pos);
+    if (map.containsBlock(block)) {
+      path.start = player.block;
+      path.end = block;
+    }
   }
 }

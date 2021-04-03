@@ -3,18 +3,18 @@ import 'package:flame/components.dart';
 import '../main.dart';
 
 class Character extends SpriteComponent with HasGameRef<MyGame> {
-  Block? block;
+  static final Vector2 offset = Vector2(3, 35);
 
-  Character(Sprite sprite) : super(sprite: sprite, size: sprite.srcSize);
+  Block block;
+
+  Character(this.block, Sprite sprite)
+      : super(sprite: sprite, size: sprite.srcSize);
 
   @override
   void update(double dt) {
     super.update(dt);
 
-    final block = this.block;
-    if (block != null) {
-      position = gameRef!.map.getBlockPosition(block);
-    }
+    position = gameRef.map.getBlockPosition(block) - offset;
   }
 
   @override
