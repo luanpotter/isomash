@@ -69,7 +69,7 @@ class MyGame extends BaseGame
     add(path = Path());
 
     final center = map.getBlockPosition(player.block);
-    camera.setRelativeOffset(Anchor.center.toVector2());
+    camera.setRelativeOffset(Anchor.center);
     camera.snapTo(center);
   }
 
