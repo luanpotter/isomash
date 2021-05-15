@@ -96,7 +96,8 @@ class MyGame extends BaseGame
   @override
   void onScroll(PointerScrollInfo event) {
     final zooms = [0.25, 0.5, 1.0, 2.0, 4.0, 10.0];
-    final idx = zooms.indexOf(camera.zoom) - event.scrollDelta.y.sign.toInt();
+    final idx =
+        zooms.indexOf(camera.zoom) - event.scrollDelta.game.y.sign.toInt();
     camera.zoom = zooms[idx % zooms.length];
   }
 
@@ -112,7 +113,7 @@ class MyGame extends BaseGame
 
   @override
   void onPanUpdate(DragUpdateInfo info) {
-    camera.translateBy(info.delta / camera.zoom * -1);
+    camera.translateBy(info.delta.global * -1);
     camera.snap();
   }
 }
