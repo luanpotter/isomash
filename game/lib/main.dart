@@ -29,7 +29,8 @@ class MyGame extends BaseGame
         ScrollDetector,
         TapDetector,
         PanDetector,
-        KeyboardEvents {
+        KeyboardEvents,
+        SecondaryTapDetector {
   late final IsometricTileMapComponent map;
   late final Selector selector;
   late final Character player;
@@ -118,8 +119,16 @@ class MyGame extends BaseGame
     final pos = details.eventPosition.game;
     final block = map.getBlock(pos);
     if (map.containsBlock(block)) {
-      path.start = player.block;
-      path.end = block;
+      map.setBlockValue(block, -1);
+    }
+  }
+
+  @override
+  void onSecondaryTapDown(TapDownInfo details) {
+    final pos = details.eventPosition.game;
+    final block = map.getBlock(pos);
+    if (map.containsBlock(block) && map.getBlockValue(block) == -1) {
+      map.setBlockValue(block, toolbar.selectedCell);
     }
   }
 
