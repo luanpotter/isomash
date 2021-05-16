@@ -1,15 +1,20 @@
 import 'dart:html' show document;
 
+import 'package:dartlin/dartlin.dart';
 import 'package:flame/components.dart';
+import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame/gestures.dart';
+import 'package:flame/keyboard.dart';
 import 'package:flame/sprite.dart';
-import 'package:flame/extensions.dart';
 import 'package:flutter/material.dart' show runApp;
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 import 'components/character.dart';
 import 'components/path.dart';
 import 'components/selector.dart';
+import 'components/toolbar.dart';
 
 void main() {
   document.onContextMenu.listen((event) => event.preventDefault());
@@ -19,11 +24,17 @@ void main() {
 }
 
 class MyGame extends BaseGame
-    with MouseMovementDetector, ScrollDetector, TapDetector, PanDetector {
+    with
+        MouseMovementDetector,
+        ScrollDetector,
+        TapDetector,
+        PanDetector,
+        KeyboardEvents {
   late final IsometricTileMapComponent map;
   late final Selector selector;
   late final Character player;
   late final Path path;
+  late final Toolbar toolbar;
 
   Vector2? dragStart;
 
@@ -63,6 +74,7 @@ class MyGame extends BaseGame
       ),
     );
 
+    add(toolbar = Toolbar(tileset));
     add(selector = Selector(tileset.getSprite(3, 3)));
     selector.block = player.block;
 
@@ -115,5 +127,16 @@ class MyGame extends BaseGame
   void onPanUpdate(DragUpdateInfo info) {
     camera.translateBy(info.delta.global * -1);
     camera.snap();
+  }
+
+  @override
+  void onKeyEvent(RawKeyEvent event) {
+    final isKeyDown = event is RawKeyDownEvent;
+    if (!isKeyDown) {
+      return;
+    }
+
+    final keyLabel = event.data.keyLabel;
+    int.tryParse(keyLabel)?.let(toolbar.select);
   }
 }
