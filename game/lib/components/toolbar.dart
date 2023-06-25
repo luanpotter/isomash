@@ -4,7 +4,7 @@ import 'package:dartlin/dartlin.dart';
 import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
 
-import '../main.dart';
+import 'package:isomash/main.dart';
 
 const _toolbarBoxSize = 64.0;
 const _toolbarLength = 9;

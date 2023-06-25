@@ -4,12 +4,13 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
 
-import '../main.dart';
+import 'package:isomash/main.dart';
 
 class Path extends Component with HasGameRef<MyGame> {
   late SpriteSheet paths;
 
-  Block? start, end;
+  Block? start;
+  Block? end;
 
   @override
   Future<void> onLoad() async {

@@ -3,19 +3,21 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
-import 'package:flame/sprite.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
-
-import 'components/character.dart';
-import 'components/path.dart';
-import 'components/selector.dart';
-import 'components/toolbar.dart';
+import 'package:flutter/widgets.dart' hide Path;
+import 'package:isomash/components/path.dart';
+import 'package:isomash/components/stacked_isometric_tile_map_component.dart';
+import 'package:isomash/components/toolbar.dart';
+import 'package:isomash/objects/character.dart';
+import 'package:isomash/objects/isometric_object.dart';
+import 'package:isomash/objects/selector.dart';
 
 void main() {
   final game = MyGame();
   runApp(GameWidget(game: game));
 }
+
+const _zooms = [0.25, 0.5, 1.0, 2.0, 4.0, 10.0];
 
 class MyGame extends FlameGame
     with
@@ -25,7 +27,7 @@ class MyGame extends FlameGame
         PanDetector,
         KeyboardEvents,
         SecondaryTapDetector {
-  late final IsometricTileMapComponent map;
+  late final StackedIsometrictTileMapComponent map;
   late final Selector selector;
   late final Character player;
   late final Path path;
@@ -35,49 +37,17 @@ class MyGame extends FlameGame
 
   @override
   Future<void> onLoad() async {
-    final tileset = SpriteSheet(
-      image: await images.load('tileset.png'),
-      srcSize: Vector2.all(32.0),
-    );
-
-    final matrix = [
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-    ];
-    add(
-      map = IsometricTileMapComponent(
-        tileset,
-        matrix,
-        tileHeight: 8,
-      ),
-    );
+    add(map = await StackedIsometrictTileMapComponent.generate());
 
     add(
       player = Character(
-        const Block(5, 7),
+        const Block(0, 0),
         await loadSprite('simple-character.png'),
       ),
     );
 
-    add(toolbar = Toolbar(tileset));
-    add(selector = Selector(tileset.getSprite(3, 3)));
-    selector.block = player.block;
+    add(toolbar = Toolbar(map.tileset));
+    add(selector = Selector(player.block, map.tileset.getSprite(3, 3)));
 
     add(path = Path());
 
@@ -108,11 +78,10 @@ class MyGame extends FlameGame
 
   @override
   void onScroll(PointerScrollInfo event) {
-    final zooms = [0.25, 0.5, 1.0, 2.0, 4.0, 10.0];
     final idx =
-        zooms.indexOf(camera.zoom) - event.scrollDelta.game.y.sign.toInt();
-    if (idx >= 0 && idx < zooms.length) {
-      camera.zoom = zooms[idx];
+        _zooms.indexOf(camera.zoom) - event.scrollDelta.game.y.sign.toInt();
+    if (idx >= 0 && idx < _zooms.length) {
+      camera.zoom = _zooms[idx];
     }
   }
 
@@ -140,6 +109,13 @@ class MyGame extends FlameGame
     camera.snap();
   }
 
+  void _rotate(int n) {
+    map.rotate(n);
+    children
+        .whereType<IsometricObject>()
+        .forEach((c) => map.rotateObject(c, n));
+  }
+
   @override
   KeyEventResult onKeyEvent(RawKeyEvent event, Set<LogicalKeyboardKey> keys) {
     final isKeyDown = event is RawKeyDownEvent;
@@ -147,8 +123,17 @@ class MyGame extends FlameGame
       return KeyEventResult.handled;
     }
 
-    final keyLabel = event.data.keyLabel;
-    int.tryParse(keyLabel)?.let(toolbar.select);
+    if (event.logicalKey == LogicalKeyboardKey.keyQ) {
+      _rotate(-1);
+    } else if (event.logicalKey == LogicalKeyboardKey.keyE) {
+      _rotate(1);
+    } else if (event.logicalKey == LogicalKeyboardKey.keyZ) {
+      final idx = _zooms.indexOf(camera.zoom) + 1;
+      camera.zoom = _zooms[idx % _zooms.length];
+    } else {
+      final keyLabel = event.data.keyLabel;
+      int.tryParse(keyLabel)?.let(toolbar.select);
+    }
     return KeyEventResult.handled;
   }
 }
