@@ -8,7 +8,6 @@ import 'package:flutter/widgets.dart' hide Path;
 import 'package:isomash/components/path.dart';
 import 'package:isomash/components/stacked_isometric_tile_map_component.dart';
 import 'package:isomash/components/toolbar.dart';
-import 'package:isomash/objects/character.dart';
 import 'package:isomash/objects/isometric_object.dart';
 import 'package:isomash/objects/selector.dart';
 
@@ -29,7 +28,6 @@ class MyGame extends FlameGame
         SecondaryTapDetector {
   late final StackedIsometrictTileMapComponent map;
   late final Selector selector;
-  late final Character player;
   late final Path path;
   late final Toolbar toolbar;
 
@@ -39,19 +37,12 @@ class MyGame extends FlameGame
   Future<void> onLoad() async {
     add(map = await StackedIsometrictTileMapComponent.generate());
 
-    add(
-      player = Character(
-        const Block(0, 0),
-        await loadSprite('simple-character.png'),
-      ),
-    );
-
     add(toolbar = Toolbar(map.tileset));
-    add(selector = Selector(player.block, map.tileset.getSprite(3, 3)));
+    add(selector = Selector(const Block(0, 0), map.tileset.getSprite(3, 3)));
 
     add(path = Path());
 
-    final center = map.getBlockCenterPosition(player.block);
+    final center = map.getBlockCenterPosition(const Block(0, 0));
     camera.setRelativeOffset(Anchor.center);
     camera.snapTo(center);
   }
@@ -61,8 +52,7 @@ class MyGame extends FlameGame
     super.render(canvas);
 
     canvas.save();
-    // camera.apply(canvas);
-    final center = map.getBlockCenterPosition(player.block);
+    final center = map.getBlockCenterPosition(const Block(0, 0));
     canvas.renderPoint(center);
     canvas.restore();
   }

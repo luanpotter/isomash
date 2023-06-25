@@ -13,9 +13,9 @@ class StackedIsometrictTileMapComponent extends Component {
   });
 
   static Future<StackedIsometrictTileMapComponent> generate() async {
-    const tileHeight = 8.0;
+    const tileHeight = 16.0;
     final tileset = SpriteSheet(
-      image: await Flame.images.load('tileset.png'),
+      image: await Flame.images.load('tile.png'),
       srcSize: Vector2.all(32.0),
     );
 
@@ -39,7 +39,10 @@ class StackedIsometrictTileMapComponent extends Component {
       children.whereType<IsometricTileMapComponent>().toList();
 
   IsometricTileMapComponent _findMapForBlock(Block block) {
-    return _maps.reversed.firstWhere((map) => map.blockValue(block) != -1);
+    return _maps.reversed.firstWhere(
+      (map) => map.blockValue(block) != -1,
+      orElse: () => _maps.first,
+    );
   }
 
   Vector2 getBlockCenterPosition(Block block) {
