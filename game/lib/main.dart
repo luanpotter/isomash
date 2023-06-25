@@ -1,13 +1,9 @@
-import 'dart:html' show document;
-
 import 'package:dartlin/dartlin.dart';
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
-import 'package:flame/gestures.dart';
-import 'package:flame/keyboard.dart';
 import 'package:flame/sprite.dart';
-import 'package:flutter/material.dart' show runApp;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -17,13 +13,11 @@ import 'components/selector.dart';
 import 'components/toolbar.dart';
 
 void main() {
-  document.onContextMenu.listen((event) => event.preventDefault());
-
   final game = MyGame();
   runApp(GameWidget(game: game));
 }
 
-class MyGame extends BaseGame
+class MyGame extends FlameGame
     with
         MouseMovementDetector,
         ScrollDetector,
@@ -66,11 +60,17 @@ class MyGame extends BaseGame
       [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
       [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     ];
-    add(map = IsometricTileMapComponent(tileset, matrix));
+    add(
+      map = IsometricTileMapComponent(
+        tileset,
+        matrix,
+        tileHeight: 8,
+      ),
+    );
 
     add(
       player = Character(
-        Block(5, 7),
+        const Block(5, 7),
         await loadSprite('simple-character.png'),
       ),
     );
@@ -81,7 +81,7 @@ class MyGame extends BaseGame
 
     add(path = Path());
 
-    final center = map.getBlockPosition(player.block);
+    final center = map.getBlockCenterPosition(player.block);
     camera.setRelativeOffset(Anchor.center);
     camera.snapTo(center);
   }
@@ -91,8 +91,8 @@ class MyGame extends BaseGame
     super.render(canvas);
 
     canvas.save();
-    camera.apply(canvas);
-    final center = map.getBlockPosition(player.block);
+    // camera.apply(canvas);
+    final center = map.getBlockCenterPosition(player.block);
     canvas.renderPoint(center);
     canvas.restore();
   }
@@ -111,7 +111,9 @@ class MyGame extends BaseGame
     final zooms = [0.25, 0.5, 1.0, 2.0, 4.0, 10.0];
     final idx =
         zooms.indexOf(camera.zoom) - event.scrollDelta.game.y.sign.toInt();
-    camera.zoom = zooms[idx % zooms.length];
+    if (idx >= 0 && idx < zooms.length) {
+      camera.zoom = zooms[idx];
+    }
   }
 
   @override
@@ -127,25 +129,26 @@ class MyGame extends BaseGame
   void onSecondaryTapDown(TapDownInfo details) {
     final pos = details.eventPosition.game;
     final block = map.getBlock(pos);
-    if (map.containsBlock(block) && map.getBlockValue(block) == -1) {
+    if (map.containsBlock(block)) {
       map.setBlockValue(block, toolbar.selectedCell);
     }
   }
 
   @override
   void onPanUpdate(DragUpdateInfo info) {
-    camera.translateBy(info.delta.global * -1);
+    camera.translateBy(info.delta.global * -1 / camera.zoom);
     camera.snap();
   }
 
   @override
-  void onKeyEvent(RawKeyEvent event) {
+  KeyEventResult onKeyEvent(RawKeyEvent event, Set<LogicalKeyboardKey> keys) {
     final isKeyDown = event is RawKeyDownEvent;
     if (!isKeyDown) {
-      return;
+      return KeyEventResult.handled;
     }
 
     final keyLabel = event.data.keyLabel;
     int.tryParse(keyLabel)?.let(toolbar.select);
+    return KeyEventResult.handled;
   }
 }

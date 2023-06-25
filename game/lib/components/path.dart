@@ -2,7 +2,6 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
-import 'package:flame/palette.dart';
 import 'package:flame/sprite.dart';
 
 import '../main.dart';
@@ -31,7 +30,7 @@ class Path extends Component with HasGameRef<MyGame> {
     final x1 = min(start.x, end.x);
     final x2 = max(start.x, end.x);
     for (var i = x1; i <= x2; i++) {
-      final pos = gameRef.map.getBlockPositionInts(i, start.y);
+      final pos = gameRef.map.getBlockRenderPositionInts(i, start.y);
       if (i > x1) {
         paths.getSpriteById(1).render(c, position: pos);
       }
@@ -43,7 +42,7 @@ class Path extends Component with HasGameRef<MyGame> {
     final y1 = min(start.y, end.y);
     final y2 = max(start.y, end.y);
     for (var i = y1; i <= y2; i++) {
-      final pos = gameRef.map.getBlockPositionInts(end.x, i);
+      final pos = gameRef.map.getBlockRenderPositionInts(end.x, i);
       if (i > y1) {
         paths.getSpriteById(0).render(c, position: pos);
       }

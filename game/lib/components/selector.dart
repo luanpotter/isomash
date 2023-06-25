@@ -13,7 +13,7 @@ class Selector extends SpriteComponent with HasGameRef<MyGame> {
 
     final block = this.block;
     if (block != null) {
-      position = gameRef.map.getBlockPosition(block);
+      position = gameRef.map.getBlockRenderPosition(block);
     }
   }
 

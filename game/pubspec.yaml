@@ -1,19 +1,19 @@
 name: isomash
 description: An isometric experiment (so far).
-publish_to: 'none'
-version: 0.1.0
+publish_to: none
+version: 0.2.0
 
 environment:
-  sdk: '>=2.12.0-259.16.beta <3.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
-  dartlin: ^0.6.0
-  flame:
-    path: ../../../flame/packages/flame
+  dartlin: ^0.6.3
+  flame: ^1.8.0
   flutter:
     sdk: flutter
 
 dev_dependencies:
+  flame_lint: ^1.0.0
   flutter_test:
     sdk: flutter
 
@@ -21,6 +21,4 @@ flutter:
   uses-material-design: false
 
   assets:
-    - assets/images/paths.png
-    - assets/images/tileset.png
-    - assets/images/simple-character.png
+    - assets/images/

@@ -14,7 +14,7 @@ class Character extends SpriteComponent with HasGameRef<MyGame> {
   void update(double dt) {
     super.update(dt);
 
-    position = gameRef.map.getBlockPosition(block) - offset;
+    position = gameRef.map.getBlockRenderPosition(block) - offset;
   }
 
   @override

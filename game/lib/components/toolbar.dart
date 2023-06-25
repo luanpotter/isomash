@@ -1,7 +1,7 @@
 import 'dart:ui';
 
-import 'package:flame/components.dart';
 import 'package:dartlin/dartlin.dart';
+import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
 
 import '../main.dart';
@@ -25,7 +25,7 @@ class Toolbar extends PositionComponent with HasGameRef<MyGame> {
   }
 
   @override
-  bool get isHud => true;
+  PositionType positionType = PositionType.viewport;
 
   void select(int keyPressed) {
     final selectedCell = keyPressed - 1;
