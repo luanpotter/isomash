@@ -22,13 +22,14 @@ class StackedIsometrictTileMapComponent extends Component {
     final layers = StaticMap.layers();
 
     final map = StackedIsometrictTileMapComponent(tileset: tileset);
+    final dy = tileHeight * layers.length;
     for (final (idx, layer) in layers.indexed) {
       await map.add(
         IsometricTileMapComponent(
           tileset,
           layer,
           tileHeight: tileHeight,
-          position: Vector2(0, -tileHeight * idx),
+          position: Vector2(0, dy - tileHeight * idx),
         ),
       );
     }

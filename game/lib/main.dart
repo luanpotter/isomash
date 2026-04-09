@@ -1,10 +1,10 @@
 import 'package:dartlin/dartlin.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' hide Path;
+import 'package:isomash/components/mode_display.dart';
 import 'package:isomash/components/path.dart';
 import 'package:isomash/components/stacked_isometric_tile_map_component.dart';
 import 'package:isomash/components/toolbar.dart';
@@ -15,6 +15,12 @@ import 'package:isomash/objects/selector.dart';
 void main() {
   final game = MyGame();
   runApp(GameWidget(game: game));
+}
+
+enum Mode { build, path }
+
+extension on Mode {
+  Mode next() => Mode.values[(index + 1) % Mode.values.length];
 }
 
 const _zooms = [0.25, 0.5, 1.0, 2.0, 4.0, 10.0];
@@ -33,43 +39,35 @@ class MyGame extends FlameGame
   late final Path path;
   late final Toolbar toolbar;
 
+  Mode mode = Mode.build;
+
   Vector2? dragStart;
 
   @override
   Future<void> onLoad() async {
-    add(map = await StackedIsometrictTileMapComponent.generate());
+    world.add(map = await StackedIsometrictTileMapComponent.generate());
 
-    add(
+    world.add(
       player = Character(
         const Block(0, 0),
         await loadSprite('simple-character.png'),
       ),
     );
+    world.add(selector = Selector(player.block, map.tileset.getSprite(3, 3)));
+    world.add(path = Path());
 
-    add(toolbar = Toolbar(map.tileset));
-    add(selector = Selector(player.block, map.tileset.getSprite(3, 3)));
-
-    add(path = Path());
+    camera.viewport.add(toolbar = Toolbar(map.tileset)..priority = 10);
+    camera.viewport.add(ModeDisplay());
 
     final center = map.getBlockCenterPosition(player.block);
-    camera.setRelativeOffset(Anchor.center);
-    camera.snapTo(center);
-  }
-
-  @override
-  void render(Canvas canvas) {
-    super.render(canvas);
-
-    canvas.save();
-    // camera.apply(canvas);
-    final center = map.getBlockCenterPosition(player.block);
-    canvas.renderPoint(center);
-    canvas.restore();
+    camera.moveTo(center);
+    camera.viewfinder.zoom = 2.0;
   }
 
   @override
   void onMouseMove(PointerHoverInfo details) {
-    final pos = details.eventPosition.game;
+    final widgetPos = details.eventPosition.widget;
+    final pos = camera.globalToLocal(widgetPos);
     final block = map.getBlock(pos);
     if (map.containsBlock(block)) {
       selector.block = block;
@@ -78,35 +76,45 @@ class MyGame extends FlameGame
 
   @override
   void onScroll(PointerScrollInfo event) {
-    final idx =
-        _zooms.indexOf(camera.zoom) - event.scrollDelta.game.y.sign.toInt();
-    if (idx >= 0 && idx < _zooms.length) {
-      camera.zoom = _zooms[idx];
-    }
+    final currentZoomIdx = _zooms.indexOf(camera.viewfinder.zoom);
+    final idx = (currentZoomIdx - event.scrollDelta.global.y.sign.toInt())
+        .clamp(0, _zooms.length - 1);
+    camera.viewfinder.zoom = _zooms[idx];
   }
 
   @override
   void onTapUp(TapUpInfo details) {
-    final pos = details.eventPosition.game;
+    final widgetPos = details.eventPosition.widget;
+    final pos = camera.globalToLocal(widgetPos);
     final block = map.getBlock(pos);
-    if (map.containsBlock(block)) {
-      map.setBlockValue(block, -1);
+    switch (mode) {
+      case Mode.build:
+        if (map.containsBlock(block)) {
+          map.setBlockValue(block, -1);
+        }
+      case Mode.path:
+        path.start = block;
     }
   }
 
   @override
   void onSecondaryTapDown(TapDownInfo details) {
-    final pos = details.eventPosition.game;
+    final widgetPos = details.eventPosition.widget;
+    final pos = camera.globalToLocal(widgetPos);
     final block = map.getBlock(pos);
-    if (map.containsBlock(block)) {
-      map.setBlockValue(block, toolbar.selectedCell);
+    switch (mode) {
+      case Mode.build:
+        if (map.containsBlock(block)) {
+          map.setBlockValue(block, toolbar.selectedCell);
+        }
+      case Mode.path:
+        path.end = block;
     }
   }
 
   @override
   void onPanUpdate(DragUpdateInfo info) {
-    camera.translateBy(info.delta.global * -1 / camera.zoom);
-    camera.snap();
+    camera.moveBy(info.delta.global * -1 / camera.viewfinder.zoom);
   }
 
   void _rotate(int n) {
@@ -117,8 +125,8 @@ class MyGame extends FlameGame
   }
 
   @override
-  KeyEventResult onKeyEvent(RawKeyEvent event, Set<LogicalKeyboardKey> keys) {
-    final isKeyDown = event is RawKeyDownEvent;
+  KeyEventResult onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keys) {
+    final isKeyDown = event is KeyDownEvent;
     if (!isKeyDown) {
       return KeyEventResult.handled;
     }
@@ -128,11 +136,15 @@ class MyGame extends FlameGame
     } else if (event.logicalKey == LogicalKeyboardKey.keyE) {
       _rotate(1);
     } else if (event.logicalKey == LogicalKeyboardKey.keyZ) {
-      final idx = _zooms.indexOf(camera.zoom) + 1;
-      camera.zoom = _zooms[idx % _zooms.length];
+      final idx = _zooms.indexOf(camera.viewfinder.zoom) + 1;
+      camera.viewfinder.zoom = _zooms[idx % _zooms.length];
     } else {
-      final keyLabel = event.data.keyLabel;
-      int.tryParse(keyLabel)?.let(toolbar.select);
+      final keyLabel = event.character;
+      if (keyLabel?.toUpperCase() == 'M') {
+        mode = mode.next();
+      } else {
+        keyLabel?.let(int.tryParse)?.let(toolbar.select);
+      }
     }
     return KeyEventResult.handled;
   }

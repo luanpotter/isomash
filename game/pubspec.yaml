@@ -8,12 +8,13 @@ environment:
 
 dependencies:
   dartlin: ^0.6.3
-  flame: ^1.8.0
+  flame:
+    path: ../../flame/packages/flame
   flutter:
     sdk: flutter
 
 dev_dependencies:
-  flame_lint: ^1.0.0
+  flame_lint: ^1.1.2
   flutter_test:
     sdk: flutter
 

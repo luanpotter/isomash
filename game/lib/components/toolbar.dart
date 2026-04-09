@@ -24,9 +24,6 @@ class Toolbar extends PositionComponent with HasGameRef<MyGame> {
     size = Vector2(_toolbarLength * _toolbarBoxSize, _toolbarBoxSize);
   }
 
-  @override
-  PositionType positionType = PositionType.viewport;
-
   void select(int keyPressed) {
     final selectedCell = keyPressed - 1;
     if (range(0, to: _toolbarLength).contains(selectedCell)) {
